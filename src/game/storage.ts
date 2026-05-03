@@ -11,6 +11,10 @@ export function getDefaultProgress(): PersistedProgress {
     bestMovesByLevelId: {},
     hasSeenTutorial: false,
     soundEnabled: true,
+    achievementIds: [],
+    streakDays: 0,
+    lastPlayedDate: "",
+    lastDailyChallengeDay: 0,
   };
 }
 
@@ -26,7 +30,6 @@ function sanitizeProgress(value: unknown): PersistedProgress {
   const defaults = getDefaultProgress();
   if (!value || typeof value !== "object") return defaults;
   const raw = value as Partial<PersistedProgress>;
-  if (raw.storageVersion !== STORAGE_VERSION) return defaults;
 
   const unlockedLevelId =
     typeof raw.unlockedLevelId === "number"
@@ -52,6 +55,10 @@ function sanitizeProgress(value: unknown): PersistedProgress {
     });
   }
 
+  const achievementIds = Array.isArray(raw.achievementIds)
+    ? raw.achievementIds.filter((id): id is string => typeof id === "string")
+    : defaults.achievementIds;
+
   return {
     storageVersion: STORAGE_VERSION,
     unlockedLevelId,
@@ -59,6 +66,10 @@ function sanitizeProgress(value: unknown): PersistedProgress {
     bestMovesByLevelId,
     hasSeenTutorial: Boolean(raw.hasSeenTutorial),
     soundEnabled: typeof raw.soundEnabled === "boolean" ? raw.soundEnabled : defaults.soundEnabled,
+    achievementIds,
+    streakDays: typeof raw.streakDays === "number" ? raw.streakDays : 0,
+    lastPlayedDate: typeof raw.lastPlayedDate === "string" ? raw.lastPlayedDate : "",
+    lastDailyChallengeDay: typeof raw.lastDailyChallengeDay === "number" ? raw.lastDailyChallengeDay : 0,
   };
 }
 

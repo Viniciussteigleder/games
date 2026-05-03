@@ -43,4 +43,8 @@ export interface PersistedProgress {
   bestMovesByLevelId: Record<string, number>;
   hasSeenTutorial: boolean;
   soundEnabled: boolean;
+  achievementIds: string[];
+  streakDays: number;
+  lastPlayedDate: string;
+  lastDailyChallengeDay: number;
 }

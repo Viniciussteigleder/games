@@ -7,6 +7,7 @@ import {
   isLevelComplete,
   parseLevel,
 } from "../game/engine";
+import { getLevelColor } from "../game/paintColors";
 import type { Direction, Level, LevelRuntimeState } from "../game/types";
 import { Board } from "./Board";
 import { GameButton } from "./GameButton";
@@ -19,31 +20,37 @@ interface GameScreenProps {
   invalidIssues?: string[];
   resetSignal: number;
   modalOpen: boolean;
+  isDaily?: boolean;
   onBack: () => void;
   onOpenSettings: () => void;
   onLevelComplete: (runtime: LevelRuntimeState) => void;
 }
 
+const INLINE_TIPS: Record<number, string> = {
+  1: "Swipe to roll — the ball slides until it hits a wall.",
+  2: "Paint every floor tile to complete the level.",
+  3: "Tap the lightbulb for a hint if you're stuck.",
+};
+
 const directionText: Record<Direction, string> = {
-  UP: "Up",
-  DOWN: "Down",
-  LEFT: "Left",
-  RIGHT: "Right",
+  UP: "Up", DOWN: "Down", LEFT: "Left", RIGHT: "Right",
 };
 
 const keyMap: Record<string, Direction> = {
-  ArrowUp: "UP",
-  ArrowDown: "DOWN",
-  ArrowLeft: "LEFT",
-  ArrowRight: "RIGHT",
-  w: "UP", W: "UP",
-  a: "LEFT", A: "LEFT",
-  s: "DOWN", S: "DOWN",
-  d: "RIGHT", D: "RIGHT",
+  ArrowUp: "UP", ArrowDown: "DOWN", ArrowLeft: "LEFT", ArrowRight: "RIGHT",
+  w: "UP", W: "UP", a: "LEFT", A: "LEFT", s: "DOWN", S: "DOWN", d: "RIGHT", D: "RIGHT",
 };
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function tryVibrate(pattern: number | number[]) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    // Web Vibration API not supported — ignore
+  }
 }
 
 interface RuntimeSnapshot {
@@ -60,6 +67,7 @@ export function GameScreen({
   invalidIssues = [],
   resetSignal,
   modalOpen,
+  isDaily = false,
   onBack,
   onOpenSettings,
   onLevelComplete,
@@ -70,6 +78,9 @@ export function GameScreen({
   const paintableCount = useMemo(() => parseLevel(level).paintableKeys.size, [level]);
   const paintedCount = runtime.paintedKeys.length;
   const completionPercent = Math.round((paintedCount / paintableCount) * 100);
+  const almostDone = completionPercent >= 90 && !runtime.isCompleted;
+
+  const color = useMemo(() => getLevelColor(level.id, isDaily), [level.id, isDaily]);
 
   const restart = useCallback(() => {
     setRuntime(createInitialRuntimeState(level));
@@ -97,6 +108,7 @@ export function GameScreen({
       const result = calculateMove(level, runtime.ballPosition, direction);
       if (!result.moved) {
         showStatus("Blocked");
+        tryVibrate(40);
         return;
       }
 
@@ -144,6 +156,7 @@ export function GameScreen({
 
       setRuntime(nextRuntime);
       if (completed) {
+        tryVibrate([40, 60, 120]);
         window.setTimeout(() => onLevelComplete(nextRuntime), 240);
       }
     },
@@ -232,7 +245,14 @@ export function GameScreen({
   }
 
   return (
-    <main className="screen game-screen">
+    <main
+      className="screen game-screen"
+      style={{
+        "--paint": color.paint,
+        "--paint-dark": color.dark,
+        "--paint-glow": color.glow,
+      } as React.CSSProperties}
+    >
       <header className="game-header">
         <button
           className="round-button"
@@ -243,7 +263,9 @@ export function GameScreen({
           <ChevronLeft size={20} />
         </button>
         <div className="level-title">
-          <p className="eyebrow">Level {level.id} · {level.difficulty}</p>
+          <p className="eyebrow">
+            {isDaily ? "📅 Daily Challenge" : `Level ${level.id} · ${level.difficulty}`}
+          </p>
           <h2>{level.name}</h2>
         </div>
         <button className="round-button" onClick={onOpenSettings} aria-label="Open settings">
@@ -257,7 +279,10 @@ export function GameScreen({
         <div><span>Par</span><strong>{level.parMoves}</strong></div>
       </section>
 
-      <section className="paint-meter" aria-label={`Painted ${completionPercent} percent`}>
+      <section
+        className={`paint-meter${almostDone ? " almost-done" : ""}`}
+        aria-label={`Painted ${completionPercent} percent`}
+      >
         <div className="meter-copy">
           <span>{paintedCount}/{paintableCount} tiles</span>
           <strong>{completionPercent}%</strong>
@@ -266,6 +291,10 @@ export function GameScreen({
           <span style={{ width: `${completionPercent}%` }} />
         </div>
       </section>
+
+      {INLINE_TIPS[level.id] && (
+        <p className="inline-tip">{INLINE_TIPS[level.id]}</p>
+      )}
 
       <Board
         level={level}

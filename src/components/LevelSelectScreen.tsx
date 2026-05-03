@@ -8,6 +8,17 @@ interface LevelSelectScreenProps {
   onSelectLevel: (levelId: number) => void;
 }
 
+const WORLDS = [
+  { name: "Courtyard",  emoji: "🌿", range: [1, 5]   },
+  { name: "Gallery",    emoji: "🖼️", range: [6, 10]  },
+  { name: "Labyrinth",  emoji: "🌀", range: [11, 15] },
+  { name: "Crown",      emoji: "👑", range: [16, 20] },
+] as const;
+
+function worldForLevel(id: number) {
+  return WORLDS.find((w) => id >= w.range[0] && id <= w.range[1])!;
+}
+
 function diffClass(d: Difficulty): string {
   return d.toLowerCase().replace(" ", "-");
 }
@@ -66,40 +77,62 @@ export function LevelSelectScreen({
       </section>
 
       <section className="level-grid" aria-label="Levels">
-        {levels.map((level) => {
-          const locked = level.id > progress.unlockedLevelId;
-          const completed = progress.completedLevelIds.includes(level.id);
-          const current = level.id === progress.unlockedLevelId;
-          const bestMoves = progress.bestMovesByLevelId[String(level.id)];
-          const stars = starsEarned(bestMoves, level.parMoves);
+        {WORLDS.map((world) => {
+          const worldLevels = levels.filter(
+            (l) => l.id >= world.range[0] && l.id <= world.range[1],
+          );
+          const worldCompleted = worldLevels.filter((l) =>
+            progress.completedLevelIds.includes(l.id),
+          ).length;
 
           return (
-            <button
-              key={level.id}
-              className={`level-tile ${completed ? "is-completed" : ""} ${current ? "is-current" : ""}`}
-              disabled={locked}
-              onClick={() => onSelectLevel(level.id)}
-              aria-label={`Level ${level.id}, ${level.name}, ${locked ? "locked" : completed ? "completed" : "unlocked"}`}
-            >
-              <span className="level-number">{level.id}</span>
-              <span className="level-name">{level.name}</span>
-              <div className="level-tile-bottom">
-                {locked ? (
-                  <span className="diff-badge diff-badge--extra-hard">
-                    <LockIcon size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
-                    Locked
-                  </span>
-                ) : (
-                  <span className={`diff-badge diff-badge--${diffClass(level.difficulty)}`}>
-                    {level.difficulty}
-                  </span>
-                )}
-                {completed && <TileStars count={stars} />}
+            <div key={world.name} className="world-section">
+              <div className="world-header">
+                <span className="world-emoji">{world.emoji}</span>
+                <span className="world-name">{world.name}</span>
+                <span className="world-progress">{worldCompleted}/{worldLevels.length}</span>
               </div>
-            </button>
+
+              {worldLevels.map((level) => {
+                const locked = level.id > progress.unlockedLevelId;
+                const completed = progress.completedLevelIds.includes(level.id);
+                const current = level.id === progress.unlockedLevelId;
+                const bestMoves = progress.bestMovesByLevelId[String(level.id)];
+                const stars = starsEarned(bestMoves, level.parMoves);
+
+                return (
+                  <button
+                    key={level.id}
+                    className={`level-tile ${completed ? "is-completed" : ""} ${current ? "is-current" : ""}`}
+                    disabled={locked}
+                    onClick={() => onSelectLevel(level.id)}
+                    aria-label={`Level ${level.id}, ${level.name}, ${locked ? "locked" : completed ? "completed" : "unlocked"}`}
+                  >
+                    <span className="level-number">{level.id}</span>
+                    <span className="level-name">{level.name}</span>
+                    <div className="level-tile-bottom">
+                      {locked ? (
+                        <span className="diff-badge diff-badge--extra-hard">
+                          <LockIcon size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
+                          Locked
+                        </span>
+                      ) : (
+                        <span className={`diff-badge diff-badge--${diffClass(level.difficulty)}`}>
+                          {level.difficulty}
+                        </span>
+                      )}
+                      {completed && <TileStars count={stars} />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           );
         })}
       </section>
     </main>
   );
 }
+
+// expose for re-use in App
+export { worldForLevel };

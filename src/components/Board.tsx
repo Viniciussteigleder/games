@@ -1,6 +1,7 @@
 import { useRef, type CSSProperties } from "react";
 import { getAvailableDirections, positionKey } from "../game/engine";
 import type { Direction, Level, Position } from "../game/types";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp } from "./Icons";
 
 interface BoardProps {
   level: Level;
@@ -15,6 +16,16 @@ const directionLabel: Record<Direction, string> = {
   DOWN: "Down",
   LEFT: "Left",
   RIGHT: "Right",
+};
+
+const DirectionIcon = ({ direction }: { direction: Direction }) => {
+  const size = 14;
+  switch (direction) {
+    case "UP":    return <ArrowUp size={size} />;
+    case "DOWN":  return <ArrowDown size={size} />;
+    case "LEFT":  return <ArrowLeft size={size} />;
+    case "RIGHT": return <ArrowRight size={size} />;
+  }
 };
 
 function getSwipeDirection(deltaX: number, deltaY: number): Direction | undefined {
@@ -43,9 +54,7 @@ export function Board({ level, ballPosition, paintedKeys, hintDirection, onSwipe
         const direction = getSwipeDirection(event.clientX - start.col, event.clientY - start.row);
         if (direction) onSwipe(direction);
       }}
-      onPointerCancel={() => {
-        pointerStart.current = undefined;
-      }}
+      onPointerCancel={() => { pointerStart.current = undefined; }}
       aria-label="Swipe on the labyrinth board"
     >
       <div
@@ -71,6 +80,7 @@ export function Board({ level, ballPosition, paintedKeys, hintDirection, onSwipe
             );
           }),
         )}
+
         {availableDirections.map((direction) => (
           <button
             key={direction}
@@ -79,14 +89,16 @@ export function Board({ level, ballPosition, paintedKeys, hintDirection, onSwipe
             onClick={() => onSwipe(direction)}
             aria-label={`Move ${directionLabel[direction]}`}
           >
-            {direction === "UP" ? "^" : direction === "DOWN" ? "v" : direction === "LEFT" ? "<" : ">"}
+            <DirectionIcon direction={direction} />
           </button>
         ))}
+
         {hintDirection ? (
           <div className={`hint-arrow hint-arrow--${hintDirection.toLowerCase()}`}>
             {directionLabel[hintDirection]}
           </div>
         ) : null}
+
         <div className="ball" aria-hidden="true" />
       </div>
     </div>

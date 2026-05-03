@@ -33,20 +33,16 @@ function App() {
   useEffect(() => {
     const issueEntries = Object.entries(validation).filter(([, issues]) => issues.length > 0);
     if (issueEntries.length > 0) {
-      console.warn("Labyrinth Painter level validation issues", Object.fromEntries(issueEntries));
+      console.warn("Level validation issues", Object.fromEntries(issueEntries));
     }
   }, [validation]);
 
-  useEffect(() => {
-    saveProgress(progress);
-  }, [progress]);
+  useEffect(() => { saveProgress(progress); }, [progress]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (modal === "TUTORIAL" || modal === "SETTINGS") {
-        setModal("NONE");
-      }
+      if (modal === "TUTORIAL" || modal === "SETTINGS") setModal("NONE");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -57,7 +53,7 @@ function App() {
     setCompletedRuntime(undefined);
     setScreen("GAME");
     setModal("NONE");
-    setResetSignal((value) => value + 1);
+    setResetSignal((v) => v + 1);
   }
 
   function closeTutorial() {
@@ -74,7 +70,7 @@ function App() {
   function replayLevel() {
     setModal("NONE");
     setCompletedRuntime(undefined);
-    setResetSignal((value) => value + 1);
+    setResetSignal((v) => v + 1);
   }
 
   function nextLevel() {
@@ -87,13 +83,17 @@ function App() {
     setProgress(next);
     setCurrentLevelId(1);
     setCompletedRuntime(undefined);
-    setResetSignal((value) => value + 1);
+    setResetSignal((v) => v + 1);
   }
+
+  const completedLevel = completedRuntime
+    ? levels.find((l) => l.id === completedRuntime.levelId)
+    : undefined;
 
   return (
     <div className="app-shell">
       <div className="phone-shell">
-        {screen === "START" ? (
+        {screen === "START" && (
           <StartScreen
             unlockedLevelId={progress.unlockedLevelId}
             difficulty={highestUnlockedLevel.difficulty}
@@ -102,18 +102,18 @@ function App() {
             onHelp={() => setModal("TUTORIAL")}
             onSettings={() => setModal("SETTINGS")}
           />
-        ) : null}
+        )}
 
-        {screen === "LEVEL_SELECT" ? (
+        {screen === "LEVEL_SELECT" && (
           <LevelSelectScreen
             levels={levels}
             progress={progress}
             onBack={() => setScreen("START")}
             onSelectLevel={openLevel}
           />
-        ) : null}
+        )}
 
-        {screen === "GAME" ? (
+        {screen === "GAME" && (
           <GameScreen
             level={currentLevel}
             bestMoves={progress.bestMovesByLevelId[String(currentLevel.id)]}
@@ -124,21 +124,24 @@ function App() {
             onOpenSettings={() => setModal("SETTINGS")}
             onLevelComplete={handleLevelComplete}
           />
-        ) : null}
+        )}
 
-        {modal === "TUTORIAL" ? <TutorialModal onClose={closeTutorial} /> : null}
-        {modal === "SETTINGS" ? (
+        {modal === "TUTORIAL" && <TutorialModal onClose={closeTutorial} />}
+
+        {modal === "SETTINGS" && (
           <SettingsModal
             soundEnabled={progress.soundEnabled}
-            onToggleSound={() => setProgress((current) => ({ ...current, soundEnabled: !current.soundEnabled }))}
+            onToggleSound={() => setProgress((c) => ({ ...c, soundEnabled: !c.soundEnabled }))}
             onResetProgress={handleResetProgress}
             onClose={() => setModal("NONE")}
           />
-        ) : null}
-        {modal === "LEVEL_COMPLETE" && completedRuntime ? (
+        )}
+
+        {modal === "LEVEL_COMPLETE" && completedRuntime && completedLevel && (
           <LevelCompleteModal
             levelId={completedRuntime.levelId}
             moves={completedRuntime.moves}
+            parMoves={completedLevel.parMoves}
             bestMoves={progress.bestMovesByLevelId[String(completedRuntime.levelId)]}
             hintsUsed={completedRuntime.hintsUsed}
             hasNextLevel={completedRuntime.levelId < 20}
@@ -149,7 +152,7 @@ function App() {
               setScreen("LEVEL_SELECT");
             }}
           />
-        ) : null}
+        )}
       </div>
     </div>
   );

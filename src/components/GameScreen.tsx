@@ -10,6 +10,7 @@ import {
 import type { Direction, Level, LevelRuntimeState } from "../game/types";
 import { Board } from "./Board";
 import { GameButton } from "./GameButton";
+import { ChevronLeft, DotsIcon, LightbulbIcon, RefreshIcon, UndoIcon } from "./Icons";
 import { StatusToast } from "./StatusToast";
 
 interface GameScreenProps {
@@ -35,14 +36,10 @@ const keyMap: Record<string, Direction> = {
   ArrowDown: "DOWN",
   ArrowLeft: "LEFT",
   ArrowRight: "RIGHT",
-  w: "UP",
-  W: "UP",
-  a: "LEFT",
-  A: "LEFT",
-  s: "DOWN",
-  S: "DOWN",
-  d: "RIGHT",
-  D: "RIGHT",
+  w: "UP", W: "UP",
+  a: "LEFT", A: "LEFT",
+  s: "DOWN", S: "DOWN",
+  d: "RIGHT", D: "RIGHT",
 };
 
 function wait(ms: number): Promise<void> {
@@ -79,9 +76,7 @@ export function GameScreen({
     setHistory([]);
   }, [level]);
 
-  useEffect(() => {
-    restart();
-  }, [restart, resetSignal]);
+  useEffect(() => { restart(); }, [restart, resetSignal]);
 
   useEffect(() => {
     if (!runtime.statusMessage) return;
@@ -163,7 +158,7 @@ export function GameScreen({
     }
     const direction = getRecommendedDirection(level, runtime.ballPosition, new Set(runtime.paintedKeys));
     if (!direction) {
-      showStatus("No useful hint from here");
+      showStatus("No useful hint");
       return;
     }
     setRuntime((current) => ({
@@ -171,7 +166,7 @@ export function GameScreen({
       hintsRemaining: current.hintsRemaining - 1,
       hintsUsed: current.hintsUsed + 1,
       activeHintDirection: direction,
-      statusMessage: `Hint: Swipe ${directionText[direction]}`,
+      statusMessage: `Hint: ${directionText[direction]}`,
     }));
   }, [invalidIssues.length, level, runtime, showStatus]);
 
@@ -219,12 +214,15 @@ export function GameScreen({
     return (
       <main className="screen game-screen">
         <header className="game-header">
-          <GameButton variant="ghost" onClick={onBack}>Back</GameButton>
+          <button className="round-button" onClick={onBack} aria-label="Back">
+            <ChevronLeft size={20} />
+          </button>
           <h2>Level unavailable</h2>
+          <span />
         </header>
         <section className="error-card">
           <strong>This maze needs repair.</strong>
-          <p>The level data did not pass validation, so it was not loaded.</p>
+          <p>The level data did not pass validation.</p>
           <ul>
             {invalidIssues.map((issue) => <li key={issue}>{issue}</li>)}
           </ul>
@@ -236,12 +234,21 @@ export function GameScreen({
   return (
     <main className="screen game-screen">
       <header className="game-header">
-        <button className="round-button" onClick={onBack} disabled={runtime.isAnimating} aria-label="Back to start">{"<"}</button>
+        <button
+          className="round-button"
+          onClick={onBack}
+          disabled={runtime.isAnimating}
+          aria-label="Back to start"
+        >
+          <ChevronLeft size={20} />
+        </button>
         <div className="level-title">
-          <span className="eyebrow">Level {level.id} - {level.difficulty}</span>
+          <p className="eyebrow">Level {level.id} · {level.difficulty}</p>
           <h2>{level.name}</h2>
         </div>
-        <button className="round-button" onClick={onOpenSettings} aria-label="Open settings">...</button>
+        <button className="round-button" onClick={onOpenSettings} aria-label="Open settings">
+          <DotsIcon size={18} />
+        </button>
       </header>
 
       <section className="stats-row" aria-label="Level stats">
@@ -275,18 +282,23 @@ export function GameScreen({
           variant="secondary"
           onClick={undo}
           disabled={runtime.isAnimating || history.length === 0}
-          icon="U"
+          icon={<UndoIcon size={16} />}
         >
           Undo
         </GameButton>
-        <GameButton variant="ghost" onClick={restart} disabled={runtime.isAnimating} icon="R">
+        <GameButton
+          variant="ghost"
+          onClick={restart}
+          disabled={runtime.isAnimating}
+          icon={<RefreshIcon size={16} />}
+        >
           Reset
         </GameButton>
         <GameButton
           variant="hint"
           onClick={handleHint}
           disabled={runtime.isAnimating || runtime.hintsRemaining <= 0}
-          icon="!"
+          icon={<LightbulbIcon size={16} />}
         >
           Hint {runtime.hintsRemaining}
         </GameButton>

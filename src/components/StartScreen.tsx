@@ -1,5 +1,6 @@
 import type { Difficulty } from "../game/types";
 import { GameButton } from "./GameButton";
+import { GridIcon, HelpCircle, PlayIcon, SettingsIcon } from "./Icons";
 
 interface StartScreenProps {
   unlockedLevelId: number;
@@ -49,11 +50,19 @@ export function StartScreen({
       </section>
 
       <div className="button-stack">
-        <GameButton onClick={onPlay} icon=">">Play Level {unlockedLevelId}</GameButton>
-        <GameButton variant="secondary" onClick={onLevelSelect} icon="#">Levels</GameButton>
+        <GameButton onClick={onPlay} icon={<PlayIcon size={18} />}>
+          Play Level {unlockedLevelId}
+        </GameButton>
+        <GameButton variant="secondary" onClick={onLevelSelect} icon={<GridIcon size={18} />}>
+          All Levels
+        </GameButton>
         <div className="split-actions">
-          <GameButton variant="ghost" onClick={onHelp} icon="?">Help</GameButton>
-          <GameButton variant="ghost" onClick={onSettings} icon="*">Settings</GameButton>
+          <GameButton variant="ghost" onClick={onHelp} icon={<HelpCircle size={18} />}>
+            How to Play
+          </GameButton>
+          <GameButton variant="ghost" onClick={onSettings} icon={<SettingsIcon size={18} />}>
+            Settings
+          </GameButton>
         </div>
       </div>
     </main>

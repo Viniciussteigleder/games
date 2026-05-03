@@ -1,10 +1,37 @@
-import type { Level, PersistedProgress } from "../game/types";
+import type { Difficulty, Level, PersistedProgress } from "../game/types";
+import { ChevronLeft, LockIcon, StarIcon } from "./Icons";
 
 interface LevelSelectScreenProps {
   levels: Level[];
   progress: PersistedProgress;
   onBack: () => void;
   onSelectLevel: (levelId: number) => void;
+}
+
+function diffClass(d: Difficulty): string {
+  return d.toLowerCase().replace(" ", "-");
+}
+
+function starsEarned(moves: number | undefined, parMoves: number): number {
+  if (moves === undefined) return 0;
+  if (moves <= parMoves) return 3;
+  if (moves <= Math.ceil(parMoves * 1.4)) return 2;
+  return 1;
+}
+
+function TileStars({ count }: { count: number }) {
+  return (
+    <div className="tile-stars">
+      {[1, 2, 3].map((n) => (
+        <StarIcon
+          key={n}
+          size={12}
+          filled={n <= count}
+          className={n <= count ? "" : "star-empty"}
+        />
+      ))}
+    </div>
+  );
 }
 
 export function LevelSelectScreen({
@@ -18,7 +45,9 @@ export function LevelSelectScreen({
   return (
     <main className="screen">
       <header className="top-bar">
-        <button className="round-button" onClick={onBack} aria-label="Back to start">{"<"}</button>
+        <button className="round-button" onClick={onBack} aria-label="Back to start">
+          <ChevronLeft size={20} />
+        </button>
         <div>
           <p className="eyebrow">Choose a maze</p>
           <h2>Level Select</h2>
@@ -41,6 +70,9 @@ export function LevelSelectScreen({
           const locked = level.id > progress.unlockedLevelId;
           const completed = progress.completedLevelIds.includes(level.id);
           const current = level.id === progress.unlockedLevelId;
+          const bestMoves = progress.bestMovesByLevelId[String(level.id)];
+          const stars = starsEarned(bestMoves, level.parMoves);
+
           return (
             <button
               key={level.id}
@@ -51,9 +83,19 @@ export function LevelSelectScreen({
             >
               <span className="level-number">{level.id}</span>
               <span className="level-name">{level.name}</span>
-              <span className="level-state">
-                {locked ? "Locked" : completed ? "Cleared" : current ? "Next up" : level.difficulty}
-              </span>
+              <div className="level-tile-bottom">
+                {locked ? (
+                  <span className="diff-badge diff-badge--extra-hard">
+                    <LockIcon size={10} style={{ display: "inline", verticalAlign: "middle", marginRight: 3 }} />
+                    Locked
+                  </span>
+                ) : (
+                  <span className={`diff-badge diff-badge--${diffClass(level.difficulty)}`}>
+                    {level.difficulty}
+                  </span>
+                )}
+                {completed && <TileStars count={stars} />}
+              </div>
             </button>
           );
         })}
